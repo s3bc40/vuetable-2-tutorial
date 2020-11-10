@@ -7,7 +7,9 @@
 
 <script>
 import Vuetable from 'vuetable-2/src/components/Vuetable'
-
+import accounting from 'accounting'
+import moment from 'moment'
+// https://github.com/ratiw/vuetable-2-tutorial/wiki/lesson-06 WIP
 export default {
     components: {
         Vuetable
@@ -15,20 +17,42 @@ export default {
     data () {
         return {
             fields: [
-                'name', 'email', 'birthdate',
+                'name', 'email',
                 {
-                    name: 'address.line1',
-                    title: 'Address 1' 
+                    name: 'birthdate',
+                    titleClass: 'center aligned',
+                    dataClass: 'center aligned',
                 },
                 {
-                    name: 'address.line2',
-                    title: 'Address 2'
+                    name: 'nickname',
+                    callback: 'allcap',
                 },
                 {
-                    name: 'address.zipcode',
-                    title: 'ZipCode'
+                    name: 'gender',
+                    titleClass: 'center aligned',
+                    dataClass: 'center aligned',
+                    callback: 'genderLabel',
+                },
+                {
+                    name: 'salary',
+                    titleClass: 'center aligned',
+                    dataClass: 'right aligned',
+                    callback: 'formatNumber',
                 },
             ]
+        }
+    },
+    methods: {
+        allcap (value) {
+            return value.toUpperCase()
+        },
+        genderLabel (value) {
+            return value === 'M'
+            ? '<span class="ui teal label"><i class="large man icon"></i>Male</span>'
+            : '<span class="ui pink label"><i class="large woman icon"></i>Female</span>'
+        },
+        formatNumber (value) {
+            return accounting.formatNumber(value, 2)
         }
     }
 }
