@@ -1,20 +1,24 @@
 <template>
     <div class="ui container">
-        <div class="vuetable-pagination ui basic segment grid">
+        <filter-bar></filter-bar>
+        <!-- <div class="vuetable-pagination ui basic segment grid">
             <vuetable-pagination-info ref="paginationInfoTop"
             ></vuetable-pagination-info>
             <vuetable-pagination ref="paginationTop"
                 @vuetable-pagination:change-page="onChangePage"
             ></vuetable-pagination>
-        </div>
+        </div> -->
         <vuetable ref="vuetable"
             :multi-sort="true"
             :sort-order="sortOrder"
-            api-url="https://vuetable.ratiw.net/api/users"
+            :api-url="apiUrl"
             :fields="fields"
-            pagination-path=""
-            :per-page="20"
+            :per-page="10"
+            :append-params="appendParams"
             @vuetable:pagination-data="onPaginationData"
+            @vuetable:cell-clicked="onCellClicked"
+            pagination-path=""
+            detail-row-component="detailRowComponent"
         ></vuetable>
         <div class="vuetable-pagination ui basic segment grid">
             <vuetable-pagination-info ref="paginationInfo"
@@ -28,12 +32,21 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import VueEvents from 'vue-events'
 import accounting from 'accounting'
 import moment from 'moment'
 import Vuetable from 'vuetable-2/src/components/Vuetable'
 import VuetablePagination from 'vuetable-2/src/components/VuetablePagination'
 // import VuetablePagination from 'vuetable-2/src/components/VuetablePaginationDropdown'
 import VuetablePaginationInfo from 'vuetable-2/src/components/VuetablePaginationInfo'
+import CustomActions from './CustomActions'
+import FilterBar from './FilterBar'
+
+Vue.use(VueEvents)
+
+Vue.component('custom-actions', CustomActions)
+Vue.component('filter-bar', FilterBar)
 
 export default {
     components: {
@@ -41,58 +54,37 @@ export default {
         VuetablePagination,
         VuetablePaginationInfo,
     },
-    data () {
-        return {
-            fields: [
-                {
-                    name: 'name',
-                    sortField: 'name',
-                },
-                {
-                    name: 'email',
-                    sortField: 'email',
-                },
-                {
-                    name: 'age',
-                    sortField: 'birthdate',
-                    dataClass: 'center aligned'
-                },
-                {
-                    name: 'birthdate',
-                    sortField: 'birthdate',
-                    titleClass: 'center aligned',
-                    dataClass: 'center aligned',
-                    callback: 'formatDate|DD-MM-YYYY'
-                },
-                {
-                    name: 'nickname',
-                    sortField: 'nickname',
-                    callback: 'allcap',
-                },
-                {
-                    name: 'gender',
-                    sortField: 'gender',
-                    titleClass: 'center aligned',
-                    dataClass: 'center aligned',
-                    callback: 'genderLabel',
-                },
-                {
-                    name: 'salary',
-                    sortField: 'salary',
-                    titleClass: 'center aligned',
-                    dataClass: 'right aligned',
-                    callback: 'formatNumber',
-                    // visible: false,
-                },
-            ],
-            sortOrder: [
-                {
-                    field: 'email',
-                    sortField: 'email',
-                    direction: 'asc',
-                }
-            ]
+    props: {
+        apiUrl: {
+            type: String,
+            required: true
+        },
+        fields: {
+            type: Array,
+            required: true
+        },
+        sortOrder: {
+            type: Array,
+            default() {
+                return []
+            }
+        },
+        appendParams: {
+            type: Object,
+            default() {
+                return {}
+            }
+        },
+        detailRowComponent: {
+            type:String
         }
+    },
+    data () {
+        return {}
+    },
+    mounted () {
+        this.$events.$on('filter-set', eventData => this.onFilterSet(eventData))
+        this.$events.$on('filter-reset', e => this.onFilterReset())
     },
     methods: {
         allcap (value) {
@@ -112,14 +104,26 @@ export default {
             : moment(value, 'YYYY-MM-DD').format(fmt)
         },
         onPaginationData (paginationData) {
-            this.$refs.paginationTop.setPaginationData(paginationData)
-            this.$refs.paginationInfoTop.setPaginationData(paginationData)
+            // this.$refs.paginationTop.setPaginationData(paginationData)
+            // this.$refs.paginationInfoTop.setPaginationData(paginationData)
 
             this.$refs.pagination.setPaginationData(paginationData)
             this.$refs.paginationInfo.setPaginationData(paginationData)
         },
         onChangePage (page) {
             this.$refs.vuetable.changePage(page)
+        },
+        onCellClicked (data, field, envent) {
+            console.log(`CellClicked: ${field.name}`)
+            this.$refs.vuetable.toggleDetailRow(data.id)
+        },
+        onFilterSet (filterText) {
+            this.appendParams.filter = filterText
+            Vue.nextTick( () => this.$refs.vuetable.refresh())
+        },
+        onFilterReset () {
+            delete appendParams.filter
+            Vue.nextTick( () => this.$refs.vuetable.refresh())
         }
     }
 }
